@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import Image from "next/image"
 const formSchema = z.object({
   username: z.string().min(2).max(50),
 })
@@ -33,9 +34,21 @@ const AuthForm = () => {
         console.log(values)
       }
       return (
-    <div>
+    <div className="card-border lg:min-w-[566px]">
+        <div className="flex flex-col gap-6 card py-14 px-10">
+            <div className="flex flex-row gap-2 justify-center">
+                <Image
+                    src="/logo.svg"
+                    alt="Logo"
+                    width={32}
+                    height={38}
+                    />
+                <h2 className="text-primary-100">InterVue AI</h2>
+            </div>
+            <h3>InterVue AI – Practice. Evaluate. Hire Smarter.</h3>
+       
         <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6 mt-4 form">
         <FormField
           control={form.control}
           name="username"
@@ -56,5 +69,7 @@ const AuthForm = () => {
       </form>
     </Form>
     </div>
-);}
+    </div>
+    );
+}
 export default AuthForm;
