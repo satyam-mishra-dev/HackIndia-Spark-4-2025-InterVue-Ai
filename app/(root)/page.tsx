@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import React from 'react';
 import Image from 'next/image';
+import { dummyInterviews } from '@/constants';
 const Page = () => {
   return (
     <>
@@ -20,6 +21,20 @@ const Page = () => {
       height={400}
       className='max-sm:hidden'
       />
+    </section>
+    <section className='flex flex-col gap-6 -scroll-mt-80'>
+    <h2>Your Interviews</h2>
+    <div className='interviews-section'>
+      <p>You have not taken any Interviews yet</p>
+    </div>
+    </section>
+    <section className='flex flex-col gap-6 mt-8'>
+      <h2>Take an Interview</h2>
+      <div className='interviews-section'>
+        {dummyInterviews.map((interview) => (
+          <InterviewCard/>
+        ))}
+      </div>
     </section>
     </>
   );
