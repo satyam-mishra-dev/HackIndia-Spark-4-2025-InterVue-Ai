@@ -95,13 +95,16 @@ export async function getLatestInterviews(
 ): Promise<Interview[] | null> {
   const { userId, limit = 20 } = params;
 
+  console.log("Fetching latest interviews for userId:", userId);
   const interviews = await db
     .collection("interviews")
     .orderBy("createdAt", "desc")
     .where("finalized", "==", true)
-    .where("userId", "!=", userId)
+    .where("userId", "!=", userId) // Exclude the current user's interviews
     .limit(limit)
     .get();
+
+  console.log("Fetched interviews:", interviews.docs.map((doc) => doc.data()));
 
   return interviews.docs.map((doc) => ({
     id: doc.id,
@@ -122,4 +125,27 @@ export async function getInterviewsByUserId(
     id: doc.id,
     ...doc.data(),
   })) as Interview[];
+}
+
+export async function createInterview(params: CreateInterviewParams) {
+  const { userId, role, type, techstack, finalized } = params;
+
+  try {
+    const interview = {
+      userId,
+      role,
+      type,
+      techstack,
+      finalized: finalized || false,
+      createdAt: new Date().toISOString(),
+    };
+
+    const interviewRef = db.collection("interviews").doc();
+    await interviewRef.set(interview);
+
+    return { success: true, interviewId: interviewRef.id };
+  } catch (error) {
+    console.error("Error creating interview:", error);
+    return { success: false, message: "Failed to create interview." };
+  }
 }
