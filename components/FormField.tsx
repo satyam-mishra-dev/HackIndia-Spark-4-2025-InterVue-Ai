@@ -10,7 +10,7 @@ interface FormFieldProps<T extends FieldValues> {
     placeholder?: string;
     type?: 'text' | 'email' | 'password' | 'file';
     description?: string;
-}sm
+}
 
 const FormField: FC<FormFieldProps<T>> = ({ control, name, label, placeholder, description, type = "text" }) => {
     return (
