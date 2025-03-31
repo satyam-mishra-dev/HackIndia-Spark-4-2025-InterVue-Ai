@@ -8,11 +8,14 @@ import { useRouter } from "next/navigation"
 import {
   Form
 } from "@/components/ui/form"
+import {auth} from "@/firebase/client"
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
 import FormField from "./FormField"
 import { Link } from "lucide-react";
 import { toast } from "sonner";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { signIn, signUp } from "@/lib/actions/auth.action";
 const AuthFormSchema = (type:FormType) => {
     return z.object({
         name: type === "sign-up" ? z.string().min(3).max(50) : z.string().optional(),
@@ -38,13 +41,35 @@ const AuthForm = ({ type }: { type: FormType }) => {
   });
 
   // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
+ async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       if (type === "sign-in") {
-        console.log("Sign In", values);
+        const {  email, password } = values;
+        const userCredentials = await createUserWithEmailAndPassword(auth,email,password);
+        const idToken = await userCredentials.user.getIdToken();
+        if(!idToken) {
+          toast.error("Invalid Credentials");
+          return;
+        }
+        await signIn({
+          email,idToken
+        });
         toast.success("Sign In Success");
         router.push("/");
       } else {
+        const {name,email,password} = values;
+        const userCredentials = await createUserWithEmailAndPassword(auth,email,password);
+        const result =await signUp({
+          uid: userCredentials.user.uid,
+          name:name!,
+          email,
+          password,
+        });
+        if (!result.success) {
+          toast.error(result.message);
+          return;
+        }
+        
         toast.success("Account Created successfully. Please Sign In");
         router.push("/sign-in");
       }
