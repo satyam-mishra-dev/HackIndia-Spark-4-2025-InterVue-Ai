@@ -19,7 +19,7 @@ export async function createFeedback(params: CreateFeedbackParams) {
 
     const { object } = await generateObject({
       model: google("gemini-2.0-flash-001", {
-        structuredOutputs: false,
+        structuredOutputs: true,
       }),
       schema: feedbackSchema,
       prompt: `
@@ -38,14 +38,23 @@ export async function createFeedback(params: CreateFeedbackParams) {
         "You are a professional interviewer analyzing a mock interview. Your task is to evaluate the candidate based on structured categories",
     });
 
+    if (!object) {
+      throw new Error("Failed to generate feedback object");
+    }
+
+    console.log("Generated feedback object:", object);
+
+    // Validate the object against the schema
+    const validatedObject = feedbackSchema.parse(object);
+
     const feedback = {
       interviewId: interviewId,
       userId: userId,
-      totalScore: object.totalScore,
-      categoryScores: object.categoryScores,
-      strengths: object.strengths,
-      areasForImprovement: object.areasForImprovement,
-      finalAssessment: object.finalAssessment,
+      totalScore: validatedObject.totalScore,
+      categoryScores: validatedObject.categoryScores,
+      strengths: validatedObject.strengths,
+      areasForImprovement: validatedObject.areasForImprovement,
+      finalAssessment: validatedObject.finalAssessment,
       createdAt: new Date().toISOString(),
     };
 
@@ -62,7 +71,7 @@ export async function createFeedback(params: CreateFeedbackParams) {
     return { success: true, feedbackId: feedbackRef.id };
   } catch (error) {
     console.error("Error saving feedback:", error);
-    return { success: false };
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error occurred" };
   }
 }
 
@@ -95,16 +104,13 @@ export async function getLatestInterviews(
 ): Promise<Interview[] | null> {
   const { userId, limit = 20 } = params;
 
-  console.log("Fetching latest interviews for userId:", userId);
   const interviews = await db
     .collection("interviews")
     .orderBy("createdAt", "desc")
     .where("finalized", "==", true)
-    .where("userId", "!=", userId) // Exclude the current user's interviews
+    .where("userId", "!=", userId)
     .limit(limit)
     .get();
-
-  console.log("Fetched interviews:", interviews.docs.map((doc) => doc.data()));
 
   return interviews.docs.map((doc) => ({
     id: doc.id,
@@ -125,27 +131,4 @@ export async function getInterviewsByUserId(
     id: doc.id,
     ...doc.data(),
   })) as Interview[];
-}
-
-export async function createInterview(params: CreateInterviewParams) {
-  const { userId, role, type, techstack, finalized } = params;
-
-  try {
-    const interview = {
-      userId,
-      role,
-      type,
-      techstack,
-      finalized: finalized || false,
-      createdAt: new Date().toISOString(),
-    };
-
-    const interviewRef = db.collection("interviews").doc();
-    await interviewRef.set(interview);
-
-    return { success: true, interviewId: interviewRef.id };
-  } catch (error) {
-    console.error("Error creating interview:", error);
-    return { success: false, message: "Failed to create interview." };
-  }
 }

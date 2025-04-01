@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-
+import {dummyInterviews} from "@/constants/index";
 import { Button } from "@/components/ui/button";
 import InterviewCard from "@/components/InterviewCard";
 
@@ -85,12 +85,12 @@ async function Home() {
               />
             ))
           ) : (
-            <p>There are no interviews available</p>
-          )}
+            dummyInterviews?.map((interview) => (
+            <InterviewCard {...interview} key ={interview.id}/>
+        )))}
         </div>
       </section>
     </>
   );
 }
-
 export default Home;
