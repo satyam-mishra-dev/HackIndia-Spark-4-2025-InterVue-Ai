@@ -19,33 +19,83 @@ export async function createFeedback(params: CreateFeedbackParams) {
 
     const { object } = await generateObject({
       model: google("gemini-2.0-flash-001", {
-        structuredOutputs: true,
+        structuredOutputs: true
       }),
       schema: feedbackSchema,
       prompt: `
-        You are an AI interviewer analyzing a mock interview. Your task is to evaluate the candidate based on structured categories. Be thorough and detailed in your analysis. Don't be lenient with the candidate. If there are mistakes or areas for improvement, point them out.
-        Transcript:
+        You are an AI interviewer analyzing a mock interview. Your task is to generate a structured JSON feedback report.
+        
+        IMPORTANT: Your response MUST be a valid JSON object with the following structure:
+        {
+          "totalScore": number (0-100),
+          "categoryScores": [
+            {
+              "name": "Communication Skills",
+              "score": number (0-100),
+              "comment": "detailed explanation"
+            },
+            {
+              "name": "Technical Knowledge",
+              "score": number (0-100),
+              "comment": "detailed explanation"
+            },
+            {
+              "name": "Problem Solving",
+              "score": number (0-100),
+              "comment": "detailed explanation"
+            },
+            {
+              "name": "Cultural Fit",
+              "score": number (0-100),
+              "comment": "detailed explanation"
+            },
+            {
+              "name": "Confidence and Clarity",
+              "score": number (0-100),
+              "comment": "detailed explanation"
+            }
+          ],
+          "strengths": ["strength1", "strength2", "strength3"],
+          "areasForImprovement": ["area1", "area2", "area3"],
+          "finalAssessment": "concise summary text"
+        }
+
+        Interview Transcript to Analyze:
         ${formattedTranscript}
 
-        Please score the candidate from 0 to 100 in the following areas. Do not add categories other than the ones provided:
-        - **Communication Skills**: Clarity, articulation, structured responses.
-        - **Technical Knowledge**: Understanding of key concepts for the role.
-        - **Problem-Solving**: Ability to analyze problems and propose solutions.
-        - **Cultural & Role Fit**: Alignment with company values and job role.
-        - **Confidence & Clarity**: Confidence in responses, engagement, and clarity.
+        Guidelines:
+        1. All scores must be integers between 0 and 100
+        2. Each category must have a detailed comment explaining the score
+        3. Provide at least 3 specific strengths
+        4. Provide at least 3 specific areas for improvement
+        5. The final assessment should be a concise summary of overall performance
+        
+        IMPORTANT: Ensure your response is a valid JSON object that exactly matches the schema structure above.
+        Do not include any additional text or explanations outside the JSON structure.
         `,
       system:
-        "You are a professional interviewer analyzing a mock interview. Your task is to evaluate the candidate based on structured categories",
+        "You are a professional interviewer generating structured JSON feedback. Your output must strictly follow the specified schema format without any additional text or markdown formatting.",
     });
 
     if (!object) {
       throw new Error("Failed to generate feedback object");
     }
 
-    console.log("Generated feedback object:", object);
+    console.log("Generated feedback object:", JSON.stringify(object, null, 2));
 
     // Validate the object against the schema
     const validatedObject = feedbackSchema.parse(object);
+
+    // Additional validation for scores
+    if (validatedObject.totalScore < 0 || validatedObject.totalScore > 100) {
+      throw new Error("Total score must be between 0 and 100");
+    }
+
+    for (const category of validatedObject.categoryScores) {
+      if (category.score < 0 || category.score > 100) {
+        throw new Error(`${category.name} score must be between 0 and 100`);
+      }
+    }
 
     const feedback = {
       interviewId: interviewId,
@@ -71,7 +121,11 @@ export async function createFeedback(params: CreateFeedbackParams) {
     return { success: true, feedbackId: feedbackRef.id };
   } catch (error) {
     console.error("Error saving feedback:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Unknown error occurred" };
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Unknown error occurred",
+      details: error instanceof Error ? error.stack : undefined
+    };
   }
 }
 
