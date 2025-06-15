@@ -63,7 +63,17 @@ async function Home() {
               />
             ))
           ) : (
-            <p>You haven&apos;t taken any interviews yet</p>
+            dummyInterviews?.map((interview) => (
+              <InterviewCard
+                key={interview.id}
+                userId={interview.userId}
+                interviewId={interview.id}
+                role={interview.role}
+                type={interview.type}
+                techstack={interview.techstack}
+                createdAt={interview.createdAt}
+              />
+            ))
           )}
         </div>
       </section>
@@ -86,8 +96,17 @@ async function Home() {
             ))
           ) : (
             dummyInterviews?.map((interview) => (
-            <InterviewCard {...interview} key ={interview.id}/>
-        )))}
+              <InterviewCard
+                key={interview.id}
+                userId={interview.userId}
+                interviewId={interview.id}
+                role={interview.role}
+                type={interview.type}
+                techstack={interview.techstack}
+                createdAt={interview.createdAt}
+              />
+            ))
+          )}
         </div>
       </section>
     </>
